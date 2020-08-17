@@ -4,6 +4,18 @@
  * Licence: GPLV3+
  * Version: 1.0.0
  * Date:    July 2020
+ *
+ * To add server url endpoints call function like next;
+ *  - coap.server(callback_switch, "switch");
+ *  - coap.server(callback_env, "env/temp");
+ *  - coap.server(callback_env, "env/humidity");
+ * 
+ * Here are examples to test this server with libcoap tool:
+ *  - coap-client -m get coap://(arduino ip addr)/light
+ *  - coap-client -e "1" -m put coap://(arduino ip addr)/light
+ *  - coap-client -e "0" -m put coap://(arduino ip addr)/light
+ *  - coap-client -m delete coap://(arduino ip addr)/light
+ * 
 ====================[inclusions]=============================================*/
 
 #include <WiFi.h>
@@ -167,7 +179,6 @@ void Coap_ResponseCallback(CoapPacket &packet, IPAddress serverIp, int serverPor
     Serial.println(payload);
     // TODO: Evaluate response code to determine how to do and log
     // TODO: Evaluate RST message as well
-    // TODO: 
 }
 
 /*==================[external functions definition]==========================*/
@@ -195,16 +206,3 @@ void loop(void){
 }
 
 /*==================[end of file]============================================*/
-
-/*
-// add server url endpoints.
-    // can add multiple endpoint urls.
-    // exp) coap.server(callback_switch, "switch");
-    //      coap.server(callback_env, "env/temp");
-    //      coap.server(callback_env, "env/humidity");
-
-if you change LED, req/res test with coap-client(libcoap), run following.
-coap-client -m get coap://(arduino ip addr)/light
-coap-client -e "1" -m put coap://(arduino ip addr)/light
-coap-client -e "0" -m put coap://(arduino ip addr)/light
-*/
