@@ -16,6 +16,34 @@ Author: Agustin Bassi - 2020
 * [Want to help?](#want-to-help-?)
 * [License](#license)
 
+## Instalar libcoap
+
+1. descargar el codigigo fuente de la pagina oficial y extraerlo
+2. correr el ./autgen.sh
+3. Correr configure pasando algunos argumentos:
+./configure --disable-doxygen --disable-manpages --disable-dtls
+4. Compilar todo el proyecto con "make"
+5. Instalar las librerias en el sistema "sudo make install"
+
+
+## Instalar contenedor libcoap
+
+docker pull obgm/libcoap:develop
+
+Ayuda
+
+docker run --rm --net=host -it obgm/libcoap:develop coap-client -h
+
+Obtener el dato del servidor
+
+docker run --rm --net=host -it obgm/libcoap:develop coap-client -m get coap://192.168.0.46/light
+
+Escribir el dato en el servidor
+
+docker run --rm --net=host -it obgm/libcoap:develop coap-client -m put -e "0"  coap://192.168.0.46/light
+
+
+
 ## 
 ## Context
 

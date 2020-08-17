@@ -7,7 +7,6 @@
 ====================[inclusions]=============================================*/
 
 #include <WiFi.h>
-
 #include <WiFiUdp.h>
 #include <coap-simple.h>
 
@@ -19,33 +18,33 @@
 #define SERIAL_BAURDATE             115200
 #define WIFI_CONNECTION_DELAY       500
 
+#define COAP_SERVER_PORT            5683
+
+#define LIGHT_OFF_REQUEST_PAYLOAD   "0"
+#define LIGHT_ON_REQUEST_PAYLOAD    "1"
+#define LIGHT_ON_RESPONSE_PAYLOAD   "{'led':false}"
+#define LIGHT_OFF_RESPONSE_PAYLOAD  "{'led':true}"
+
 /*==================[internal data declaration]==============================*/
 
 // WiFi settings
 const char* WIFI_SSID = "Fibertel WiFi152 2.4GHz";
 const char* WIFI_PASS = "0043510112";
-
-// const char* ssid     = "your-ssid";
-// const char* password = "your-password";
-
 // UDP and CoAP class
-WiFiUDP udp;
-Coap coap(udp);
-
-// LED STATE
-bool LEDSTATE;
+WiFiUDP WiFiUdp;
+Coap    Coap(WiFiUdp);
 
 /*==================[external data definition]===============================*/
 
-// CoAP client response callback
-void callback_response(CoapPacket &packet, IPAddress ip, int port);
-
-// CoAP server endpoint url callback
-void callback_light(CoapPacket &packet, IPAddress ip, int port);
+void Wifi_EstablishConnection   (void);
+void Coap_InitServer            (void);
+void Coap_LogPacketInfo         (CoapPacket &packet);
+void Coap_ResponseCallback      (CoapPacket &packet, IPAddress ip, int port);
+void Coap_LightResourceCallback (CoapPacket &packet, IPAddress ip, int port);
 
 /*==================[internal functions definition]==========================*/
 
-void Wifi_EstablishConnection() {
+void Wifi_EstablishConnection(void) {
     // Print network SSID
     Serial.println();
     Serial.print("Connecting to ");
@@ -64,59 +63,111 @@ void Wifi_EstablishConnection() {
     Serial.println(WiFi.localIP());
 }
 
-
-// CoAP server endpoint URL
-void callback_light(CoapPacket &packet, IPAddress ip, int port) {
-  Serial.println("[Light] ON/OFF");
-  
-  // send response
-  char p[packet.payloadlen + 1];
-  memcpy(p, packet.payload, packet.payloadlen);
-  p[packet.payloadlen] = NULL;
-  
-  String message(p);
-
-  if (message.equals("0"))
-    LEDSTATE = false;
-  else if(message.equals("1"))
-    LEDSTATE = true;
-      
-  if (LEDSTATE) {
-    digitalWrite(9, HIGH) ; 
-    coap.sendResponse(ip, port, packet.messageid, "1");
-  } else { 
-    digitalWrite(9, LOW) ; 
-    coap.sendResponse(ip, port, packet.messageid, "0");
-  }
-}
-
-// CoAP client response callback
-void callback_response(CoapPacket &packet, IPAddress ip, int port) {
-  Serial.println("[Coap Response got]");
-  
-  char p[packet.payloadlen + 1];
-  memcpy(p, packet.payload, packet.payloadlen);
-  p[packet.payloadlen] = NULL;
-  
-  Serial.println(p);
-}
-
-void init_coap(void){
-    // add server url endpoints.
-    // can add multiple endpoint urls.
-    // exp) coap.server(callback_switch, "switch");
-    //      coap.server(callback_env, "env/temp");
-    //      coap.server(callback_env, "env/humidity");
-    Serial.println("Setup Callback Light");
-    coap.server(callback_light, "light");
-
-    // client response callback.
-    // this endpoint is single callback.
-    Serial.println("Setup Response Callback");
-    coap.response(callback_response);
-
+void Coap_InitServer(void){
+    // configure callback to light resource
+    Serial.println("[Coap_InitServer] - Setup Callback Light");
+    Coap.server(Coap_LightResourceCallback, "light");
+    // client response callback single callback
+    Serial.println("[Coap_InitServer] - Setup Response Callback");
+    Coap.response(Coap_ResponseCallback);
     // start coap server/client
-    coap.start();
+    Coap.start(COAP_PORT);
+}
+
+void Coap_LogPacketInfo(CoapPacket &packet){
+    // Start of log info
+    Serial.println("\n\n\r==================================================");
+    Serial.println("Coap_LogPacketInfo");
+    Serial.println("------------------\n\r");
+    // Show message method
+    Serial.print(" - Method:         ");
+    if (packet.code == COAP_GET){
+        Serial.println("COAP_GET");
+    } else if (packet.code == COAP_POST){
+        Serial.println("COAP_POST");
+    } else if (packet.code == COAP_PUT){
+        Serial.println("COAP_PUT");
+    } else if (packet.code == COAP_DELETE){
+        Serial.println("COAP_DELETE");
+    } else {
+        Serial.println("INVALID");
+    }
+    // Show message type
+    Serial.print(" - Message Type:   ");
+    if (packet.type == COAP_CON){
+        Serial.println("COAP_CON");
+    } else if (packet.type == COAP_NONCON){
+        Serial.println("COAP_NONCON");
+    } else {
+        Serial.println("INVALID");
+    }
+    // Show payload Lenght
+    Serial.print(" - Payload lenght: ");
+    Serial.println(packet.payloadlen);
+    // Show message ID
+    Serial.print(" - Message ID:     ");
+    Serial.println(packet.messageid);
+    // End of log info
+    Serial.println("\r==================================================\n\n\r");
+}
+
+void Coap_LightResourceCallback(CoapPacket &packet, IPAddress clientIp, int clientPort) {
+    // Log message info
+    Coap_LogPacketInfo(packet);
+    // evaluate method and perform action
+    switch(packet.code){
+        case COAP_GET:
+            // Log the action and send response
+            Serial.println("[Coap_CallcallbackLight] - Return the LED status");
+            Coap.sendResponse(
+                clientIp, 
+                clientPort, 
+                packet.messageid,
+                digitalRead(LED_ONBOARD) ? LIGHT_ON_RESPONSE_PAYLOAD : LIGHT_OFF_RESPONSE_PAYLOAD
+            );
+        break;
+        case COAP_PUT:
+            // parse CoAP message payload (if received)
+            char packetPayloadRaw[packet.payloadlen + 1];
+            memcpy(packetPayloadRaw, packet.payload, packet.payloadlen);
+            packetPayloadRaw[packet.payloadlen] = NULL;
+            String message(packetPayloadRaw);
+            // analyze request payload message
+            if (message.equals(LIGHT_OFF_REQUEST_PAYLOAD)){
+                // Write the new status in LED, send response and log action
+                digitalWrite(LED_ONBOARD, false);
+                Coap.sendResponse(clientIp, clientPort, packet.messageid, LIGHT_OFF_RESPONSE_PAYLOAD);
+                Serial.println("[Coap_CallcallbackLight] Changing LED state to OFF");
+            } else if(message.equals(LIGHT_ON_REQUEST_PAYLOAD)){
+                digitalWrite(LED_ONBOARD, true);
+                Coap.sendResponse(clientIp, clientPort, packet.messageid, LIGHT_ON_RESPONSE_PAYLOAD);
+                Serial.println("[Coap_CallcallbackLight] Changing LED state to ON");
+            }
+        break;
+        // Return the same response for methods COAP_POST & COAP_DELETE (not allowed)
+        case COAP_POST:
+        case COAP_DELETE:
+            // Log the action and send Not Allowed response
+            Serial.println("[Coap_CallcallbackLight] - Client has requested unsupported method");
+            Coap.sendResponse(clientIp, clientPort, packet.messageid, NULL, 0, 
+                COAP_METHOD_NOT_ALLOWD, COAP_NONE, packet.token, packet.tokenlen);
+        break;
+        default:
+            Serial.println("[Coap_CallcallbackLight] - Client has requested invalid method");
+    }
+}
+
+void Coap_ResponseCallback(CoapPacket &packet, IPAddress serverIp, int serverPort) {
+    // parse CoAP message payload (if received)
+    char payload[packet.payloadlen + 1];
+    memcpy(payload, packet.payload, packet.payloadlen);
+    payload[packet.payloadlen] = NULL;
+    // Log the received payload
+    Serial.print("[Coap_CallbackResponse] - Response received, payload: ");
+    Serial.println(payload);
+    // TODO: Evaluate response code to determine how to do and log
+    // TODO: Evaluate RST message as well
+    // TODO: 
 }
 
 /*==================[external functions definition]==========================*/
@@ -133,19 +184,25 @@ void setup(void){
     // connect to wifi network
     Wifi_EstablishConnection();
     // create the things that will be exposed
-    init_coap();
+    Coap_InitServer();
     // put led in a known state
     digitalWrite(LED_ONBOARD, true);
 }
 
 void loop(void){
-    delay(1000);
-    coap.loop();
+    Coap.loop();
+    delay(1);
 }
 
 /*==================[end of file]============================================*/
 
 /*
+// add server url endpoints.
+    // can add multiple endpoint urls.
+    // exp) coap.server(callback_switch, "switch");
+    //      coap.server(callback_env, "env/temp");
+    //      coap.server(callback_env, "env/humidity");
+
 if you change LED, req/res test with coap-client(libcoap), run following.
 coap-client -m get coap://(arduino ip addr)/light
 coap-client -e "1" -m put coap://(arduino ip addr)/light
