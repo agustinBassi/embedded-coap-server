@@ -30,13 +30,15 @@
 #define INIT_DELAY                          3000
 #define SERIAL_BAURDATE                     115200
 #define WIFI_CONNECTION_DELAY               500
-
+// COAP SERVER SETTINGS
 #define COAP_SERVER_PORT                    5683
-
-#define LIGHT_OFF_REQUEST_PAYLOAD           "Off"
-#define LIGHT_ON_REQUEST_PAYLOAD            "On"
-#define LIGHT_ON_RESPONSE_PAYLOAD           "{'led':true}"
-#define LIGHT_OFF_RESPONSE_PAYLOAD          "{'led':false}"
+// COAP RESOURCES SETTINGS
+#define COAP_RESOURCE_LIGHT                 "light"
+#define COAP_RESOURCE_BUTTON                "button"
+#define LIGHT_OFF_REQUEST_PAYLOAD           "{'light':false}"
+#define LIGHT_ON_REQUEST_PAYLOAD            "{'light':true}"
+#define LIGHT_OFF_RESPONSE_PAYLOAD          "{'light':false}"
+#define LIGHT_ON_RESPONSE_PAYLOAD           "{'light':true}"
 #define BUTTON_PRESSED_RESPONSE_PAYLOAD     "{'button':false}"
 #define BUTTON_NOT_PRESSED_RESPONSE_PAYLOAD "{'button':true}"
 
@@ -82,10 +84,10 @@ void Wifi_EstablishConnection(void) {
 void Coap_InitServer(void){
     // configure callback to light resource
     Serial.println("[Coap_InitServer] - Setup Callback Light");
-    Coap.server(Coap_LightResourceCallback, "light");
+    Coap.server(Coap_LightResourceCallback, COAP_RESOURCE_LIGHT);
     // configure callback to button resource
     Serial.println("[Coap_InitServer] - Setup Callback Button");
-    Coap.server(Coap_ButtonResourceCallback, "button");
+    Coap.server(Coap_ButtonResourceCallback, COAP_RESOURCE_BUTTON);
     // client response callback single callback
     Serial.println("[Coap_InitServer] - Setup Response Callback");
     Coap.response(Coap_ResponseCallback);
