@@ -83,7 +83,7 @@ void Coap_InitServer(void){
     Serial.println("[Coap_InitServer] - Setup Response Callback");
     Coap.response(Coap_ResponseCallback);
     // start coap server/client
-    Coap.start(COAP_PORT);
+    Coap.start(COAP_SERVER_PORT);
 }
 
 void Coap_LogPacketInfo(CoapPacket &packet){
@@ -127,7 +127,7 @@ void Coap_LightResourceCallback(CoapPacket &packet, IPAddress clientIp, int clie
     // Log message info
     Coap_LogPacketInfo(packet);
     // evaluate method and perform action
-    switch(packet.code){
+    switch((int)packet.code){
         case COAP_GET:
             // Log the action and send response
             Serial.println("[Coap_CallcallbackLight] - Return the LED status");
@@ -138,11 +138,19 @@ void Coap_LightResourceCallback(CoapPacket &packet, IPAddress clientIp, int clie
                 digitalRead(LED_ONBOARD) ? LIGHT_ON_RESPONSE_PAYLOAD : LIGHT_OFF_RESPONSE_PAYLOAD
             );
         break;
+        // Return the same response for methods COAP_POST & COAP_DELETE (not allowed)
+        case COAP_POST:
+        case COAP_DELETE:
+            // Log the action and send Not Allowed response
+            Serial.println("[Coap_CallcallbackLight] - Client has requested unsupported method");
+            Coap.sendResponse(clientIp, clientPort, packet.messageid, NULL, 0, 
+                COAP_METHOD_NOT_ALLOWD, COAP_NONE, packet.token, packet.tokenlen);
+        break;
         case COAP_PUT:
             // parse CoAP message payload (if received)
             char packetPayloadRaw[packet.payloadlen + 1];
             memcpy(packetPayloadRaw, packet.payload, packet.payloadlen);
-            packetPayloadRaw[packet.payloadlen] = NULL;
+            packetPayloadRaw[packet.payloadlen] = '\0';
             String message(packetPayloadRaw);
             // analyze request payload message
             if (message.equals(LIGHT_OFF_REQUEST_PAYLOAD)){
@@ -156,16 +164,8 @@ void Coap_LightResourceCallback(CoapPacket &packet, IPAddress clientIp, int clie
                 Serial.println("[Coap_CallcallbackLight] Changing LED state to ON");
             }
         break;
-        // Return the same response for methods COAP_POST & COAP_DELETE (not allowed)
-        case COAP_POST:
-        case COAP_DELETE:
-            // Log the action and send Not Allowed response
-            Serial.println("[Coap_CallcallbackLight] - Client has requested unsupported method");
-            Coap.sendResponse(clientIp, clientPort, packet.messageid, NULL, 0, 
-                COAP_METHOD_NOT_ALLOWD, COAP_NONE, packet.token, packet.tokenlen);
-        break;
-        default:
-            Serial.println("[Coap_CallcallbackLight] - Client has requested invalid method");
+        // default:
+        //     Serial.println("[Coap_CallcallbackLight] - Client has requested invalid method");
     }
 }
 
@@ -173,7 +173,7 @@ void Coap_ResponseCallback(CoapPacket &packet, IPAddress serverIp, int serverPor
     // parse CoAP message payload (if received)
     char payload[packet.payloadlen + 1];
     memcpy(payload, packet.payload, packet.payloadlen);
-    payload[packet.payloadlen] = NULL;
+    payload[packet.payloadlen] = '\0';
     // Log the received payload
     Serial.print("[Coap_CallbackResponse] - Response received, payload: ");
     Serial.println(payload);
