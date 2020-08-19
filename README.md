@@ -33,7 +33,7 @@ _PlatformIO is an application that can works standolone with code edited in any 
 Begin by downloading this project with the command below.
 
 ```sh
-git clone https://github.com/ce-iot/embedded-coap-server.git
+git clone https://github.com/agustinBassi/embedded-coap-server.git
 cd embedded-coap-server/
 ```
 
@@ -73,28 +73,29 @@ To test the CoAP server any CoAP client can be used. In this case a Docker conta
 ```sh
 docker pull obgm/libcoap:develop 
 ```
-Obtain the `light` resource state with the next command.
+
+* Get the `light` resource state with the next command.
 
 ```sh
 docker run --rm --net=host -it obgm/libcoap:develop \
 coap-client -m get -p 5683 coap://IP_SERVER/light
 ```
 
-Set `light` resource ON with next command.
+* Update `light` resource ON with next command.
 
 ```sh
 docker run --rm --net=host -it obgm/libcoap:develop \
 coap-client -m put -e "{'light': true}" -p 5683 coap://IP_SERVER/light
 ```
 
-Set `light` resource OFF with next command.
+* Update `light` resource OFF with next command.
 
 ```sh
 docker run --rm --net=host -it obgm/libcoap:develop \
 coap-client -m put -e "{'light': false}" -p 5683 coap://IP_SERVER/light
 ```
 
-Obtain the `button` resource state with the next command.
+* Get the `button` resource state with the next command.
 
 ```sh
 docker run --rm --net=host -it obgm/libcoap:develop \
