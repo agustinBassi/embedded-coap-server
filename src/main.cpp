@@ -45,8 +45,8 @@
 /*==================[internal data declaration]==============================*/
 
 // WiFi settings
-const char* WIFI_SSID = "Fibertel WiFi152 2.4GHz";
-const char* WIFI_PASS = "0043510112";
+const char* WIFI_SSID = "WIFI_SSID";
+const char* WIFI_PASS = "WIFI_PASS";
 // UDP and CoAP class
 WiFiUDP WiFiUdp;
 Coap    Coap(WiFiUdp);
