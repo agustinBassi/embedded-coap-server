@@ -35,6 +35,7 @@
 // COAP RESOURCES SETTINGS
 #define COAP_RESOURCE_LIGHT                 "light"
 #define COAP_RESOURCE_BUTTON                "button"
+#define COAP_RESOURCE_WELL_KNOWN            ".well-known/core"
 #define LIGHT_OFF_REQUEST_PAYLOAD           "{'light':false}"
 #define LIGHT_ON_REQUEST_PAYLOAD            "{'light':true}"
 #define LIGHT_OFF_RESPONSE_PAYLOAD          "{'light':false}"
@@ -56,6 +57,7 @@ Coap    Coap(WiFiUdp);
 void Wifi_EstablishConnection    (void);
 void Coap_InitServer             (void);
 void Coap_LogPacketInfo          (CoapPacket &packet);
+void Coap_WellKnownCallback      (CoapPacket &packet, IPAddress ip, int port);
 void Coap_ResponseCallback       (CoapPacket &packet, IPAddress ip, int port);
 void Coap_LightResourceCallback  (CoapPacket &packet, IPAddress ip, int port);
 void Coap_ButtonResourceCallback (CoapPacket &packet, IPAddress ip, int port);
@@ -88,6 +90,9 @@ void Coap_InitServer(void){
     // configure callback to button resource
     Serial.println("[Coap_InitServer] - Setup Callback Button");
     Coap.server(Coap_ButtonResourceCallback, COAP_RESOURCE_BUTTON);
+    // configure callback for discovery the server resources
+    Serial.println("[Coap_InitServer] - Setup Callback Well known");
+    Coap.server(Coap_WellKnownCallback, COAP_RESOURCE_WELL_KNOWN);
     // client response callback single callback
     Serial.println("[Coap_InitServer] - Setup Response Callback");
     Coap.response(Coap_ResponseCallback);
@@ -130,6 +135,33 @@ void Coap_LogPacketInfo(CoapPacket &packet){
     Serial.println(packet.messageid);
     // End of log info
     Serial.println("\r==================================================\n\n\r");
+}
+
+void Coap_WellKnownCallback(CoapPacket &packet, IPAddress clientIp, int clientPort){
+    // Log message info
+    Coap_LogPacketInfo(packet);
+    // evaluate method and perform action
+    switch(packet.code){
+        case COAP_GET:
+            // Log the action and send response
+            Serial.println("[Coap_WellKnownCallback] - Return the available resources");
+            Coap.sendResponse(
+                clientIp, 
+                clientPort, 
+                packet.messageid,
+                "</.well-known/core>, </light>title='Light resource';methods=GET,POST, </button>title='Button resource';methods=GET"
+            );
+        break;
+        // Return the same response for methods COAP_POST & COAP_DELETE (not allowed)
+        case COAP_POST:
+        case COAP_DELETE:
+        case COAP_PUT:
+            // Log the action and send Not Allowed response
+            Serial.println("[Coap_WellKnownCallback] - Client has requested not allowed method");
+            Coap.sendResponse(clientIp, clientPort, packet.messageid, NULL, 0, 
+                COAP_METHOD_NOT_ALLOWD, COAP_NONE, packet.token, packet.tokenlen);
+        break;
+    }
 }
 
 void Coap_LightResourceCallback(CoapPacket &packet, IPAddress clientIp, int clientPort) {
