@@ -35,7 +35,7 @@
 // COAP RESOURCES SETTINGS
 #define COAP_RESOURCE_LIGHT                 "light"
 #define COAP_RESOURCE_BUTTON                "button"
-#define COAP_RESOURCE_WELL_KNOWN            ".well-known/core"
+#define COAP_RESOURCE_WELL_KNOWN            ".well-known/r"
 #define LIGHT_OFF_REQUEST_PAYLOAD           "{'light':false}"
 #define LIGHT_ON_REQUEST_PAYLOAD            "{'light':true}"
 #define LIGHT_OFF_RESPONSE_PAYLOAD          "{'light':false}"
@@ -67,8 +67,8 @@ void Coap_ButtonResourceCallback (CoapPacket &packet, IPAddress ip, int port);
 void Wifi_EstablishConnection(void) {
     // Print network SSID
     Serial.println();
-    Serial.print("Connecting to ");
-    Serial.println(WIFI_SSID);
+    Serial.print("Connecting to: ");
+    Serial.print(WIFI_SSID);
     // Try to connect
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     // Wait until connection is established
@@ -77,9 +77,7 @@ void Wifi_EstablishConnection(void) {
         Serial.print(".");
     }
     // Report IP address
-    Serial.println("");
-    Serial.println("WiFi connected");
-    Serial.println("IP address: ");
+    Serial.print("\nWiFi connected! IP address: ");
     Serial.println(WiFi.localIP());
 }
 
@@ -149,7 +147,9 @@ void Coap_WellKnownCallback(CoapPacket &packet, IPAddress clientIp, int clientPo
                 clientIp, 
                 clientPort, 
                 packet.messageid,
-                "</.well-known/core>, </light>title='Light resource';methods=GET,POST, </button>title='Button resource';methods=GET"
+                "</.well-known/r>;d=Info of available resources,\n"
+                "</light>n=Light;ct=51;d=Allowed methods GET & POST,\n"
+                "</button>n=Button;ct=51;d=Allowed methods GET"
             );
         break;
         // Return the same response for methods COAP_POST & COAP_DELETE (not allowed)
