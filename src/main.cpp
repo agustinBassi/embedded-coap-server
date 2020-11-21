@@ -146,8 +146,8 @@ void Coap_WellKnownCallback(CoapPacket &packet, IPAddress clientIp, int clientPo
                 clientIp, 
                 clientPort, 
                 packet.messageid,
-                "</.well-known/r>;d=Info of available resources,\n"
-                "</light>n=Light;ct=51;d=Allowed methods GET & PUT,\n"
+                "</.well-known/core>;d=Info of available resources,"
+                "</light>n=Light;ct=51;d=Allowed methods GET & PUT,"
                 "</button>n=Button;ct=51;d=Allowed methods GET"
             );
         break;
