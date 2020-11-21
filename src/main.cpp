@@ -35,16 +35,15 @@
 // COAP RESOURCES SETTINGS
 #define COAP_RESOURCE_LIGHT                 "light"
 #define COAP_RESOURCE_BUTTON                "button"
-#define COAP_RESOURCE_WELL_KNOWN            ".well-known/r"
-#define LIGHT_OFF_REQUEST_PAYLOAD           "{'light':false}"
-#define LIGHT_ON_REQUEST_PAYLOAD            "{'light':true}"
-#define LIGHT_OFF_RESPONSE_PAYLOAD          "{'light':false}"
-#define LIGHT_ON_RESPONSE_PAYLOAD           "{'light':true}"
-#define BUTTON_PRESSED_RESPONSE_PAYLOAD     "{'button':false}"
-#define BUTTON_NOT_PRESSED_RESPONSE_PAYLOAD "{'button':true}"
+#define COAP_RESOURCE_WELL_KNOWN            ".well-known/core"
+#define LIGHT_OFF_REQUEST_PAYLOAD           "{\"light\":false}"
+#define LIGHT_ON_REQUEST_PAYLOAD            "{\"light\":true}"
+#define LIGHT_OFF_RESPONSE_PAYLOAD          "{\"light\":false}"
+#define LIGHT_ON_RESPONSE_PAYLOAD           "{\"light\":true}"
+#define BUTTON_PRESSED_RESPONSE_PAYLOAD     "{\"button\":false}"
+#define BUTTON_NOT_PRESSED_RESPONSE_PAYLOAD "{\"button\":true}"
 
 /*==================[internal data declaration]==============================*/
-
 // WiFi settings
 const char* WIFI_SSID = "WIFI_SSID";
 const char* WIFI_PASS = "WIFI_PASS";
@@ -147,8 +146,8 @@ void Coap_WellKnownCallback(CoapPacket &packet, IPAddress clientIp, int clientPo
                 clientIp, 
                 clientPort, 
                 packet.messageid,
-                "</.well-known/r>;d=Info of available resources,\n"
-                "</light>n=Light;ct=51;d=Allowed methods GET & POST,\n"
+                "</.well-known/core>;d=Info of available resources,"
+                "</light>n=Light;ct=51;d=Allowed methods GET & PUT,"
                 "</button>n=Button;ct=51;d=Allowed methods GET"
             );
         break;
