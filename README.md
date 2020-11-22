@@ -8,7 +8,7 @@ Author: Agustin Bassi - 2020
 * [Intro](#intro)
 * [Install dependencies](#install-dependencies)
 * [Run CoAP server](#run-coap-server)
-* [Test CoAP server with CoAP client (optional)](#test-coap-server-with-coap-client-(optional))
+* [Test CoAP server (optional)](#test-coap-server-(optional))
 * [Want to help?](#want-to-help-?)
 * [License](#license)
 
@@ -22,11 +22,10 @@ The original board target is ESP32 but it can be easily modified to work with ES
 
 The project need the next dependencies:
 
-* [Visual Studio Code](https://code.visualstudio.com/), a good editor that can be used to program many languages. 
-* [PlatformIO](https://platformio.org/) extension in order to compile the project and upload the code into the board. In [this link](https://iot-es.herokuapp.com/post/details/17) there is a guide to install PlatformIO for Visual Studio Code, compile and run an example project. 
-* Docker & Docker-Compose (optional to test the server). In this links are the official installation steps for [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/).
+* [PlatformIO](https://platformio.org/): a full CLI tool to manage libraries, platforms, frameworks and projects for embedded systems. It handles all task needed in background with a easy to use command line interface. Even, it can be installed as an extension for many IDEs, for example Visual Studio Code.
+* [Visual Studio Code](https://code.visualstudio.com/) (optional but nice to hace): a popular IDE that can be used to program many languages. It has an extension for PlatformIO. So, if Visual Studio code is installed, the convenient way to install PlatformIO is by adding it as an extension instead of install them separately. 
+* Docker & Docker-Compose (optional to test CoAP server). In this links are the official installation steps for [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/).
 
-_PlatformIO is an application that can works standolone with code edited in any editor, but the recommended an easiest way is using it via VS Code plugin._
 
 ## Run CoAP server
 
@@ -44,13 +43,7 @@ const char* WIFI_SSID = "WIFI_SSID";
 const char* WIFI_PASS = "WIFI_PASS";
 ```
 
-Compile the project with the next command.
-
-```sh
-pio run
-```
-
-Download the code to the board and open the serial terminal all in the same operation with the command below.
+Compile the firmware, download it to the board and open the serial monitor, all in one, with the next command.
 
 ```sh
 pio run -t upload && pio device monitor
@@ -66,40 +59,68 @@ WiFi connected - IP address: 192.168.0.46
 [Coap_InitServer] - Setup Response Callback
 ```
 
-## Test CoAP server with CoAP client (optional)
+## Test CoAP server (optional)
 
 To test the CoAP server any CoAP client can be used. In this case a Docker container with libcoap tool installed inside is proposed. Start by downloading the image with the next command.
 
 ```sh
-docker pull obgm/libcoap:develop 
+docker pull abassi/libcoap:latest
+```
+
+* Get the `.well-known/core` resource (available CoAP server resources) with the next command.
+
+```sh
+docker run --rm --net=host -it abassi/libcoap \
+coap-client -m get -p 5683 coap://IP_SERVER/.well-known/core
 ```
 
 * Get the `light` resource state with the next command.
 
 ```sh
-docker run --rm --net=host -it obgm/libcoap:develop \
+docker run --rm --net=host -it abassi/libcoap \
 coap-client -m get -p 5683 coap://IP_SERVER/light
 ```
 
 * Update `light` resource ON with next command.
 
 ```sh
-docker run --rm --net=host -it obgm/libcoap:develop \
-coap-client -m put -e "{'light': true}" -p 5683 coap://IP_SERVER/light
+docker run --rm --net=host -it abassi/libcoap \
+coap-client -m put -e '{"light":true}' -p 5683 coap://IP_SERVER/light
 ```
 
 * Update `light` resource OFF with next command.
 
 ```sh
-docker run --rm --net=host -it obgm/libcoap:develop \
-coap-client -m put -e "{'light': false}" -p 5683 coap://IP_SERVER/light
+docker run --rm --net=host -it abassi/libcoap \
+coap-client -m put -e '{"light":true}' -p 5683 coap://IP_SERVER/light
 ```
 
 * Get the `button` resource state with the next command.
 
 ```sh
-docker run --rm --net=host -it obgm/libcoap:develop \
+docker run --rm --net=host -it abassi/libcoap \
 coap-client -m get -p 5683 coap://IP_SERVER/button
+```
+
+* Test not found resource response with the next command.
+
+```sh
+docker run --rm --net=host -it abassi/libcoap \
+coap-client -m get -p 5683 coap://IP_SERVER/not/found/resource
+```
+
+* Test some not allowed method resource response with the next command.
+
+```sh
+docker run --rm --net=host -it abassi/libcoap \
+coap-client -m post -e '{"light":true}' -p 5683 coap://IP_SERVER/light
+```
+
+* Test bad request resource response with the next command.
+
+```sh
+docker run --rm --net=host -it abassi/libcoap \
+coap-client -m post -e '{"light":invalid_state}' -p 5683 coap://IP_SERVER/light
 ```
 
 ## 
